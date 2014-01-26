@@ -1,0 +1,73 @@
+[GLOBAL]
+delay = 5
+private = false
+
+
+[main]
+slides = 
+    full_of_fish
+    google
+    cube
+    gtk
+    test
+keyboard_control = on
+paused_on_start = on
+fullscreen_on_start = on
+
+; Control the keyboard shortcuts
+; ------------------------------
+; Each option of this section corresponds to 
+; a contstant in http://lazka.github.io/pgi-docs/api/Gdk_3.0/constants.html
+;
+; To add a modifier (ctrl,alt,etc), prepend the modifier mask(s) from 
+; http://lazka.github.io/pgi-docs/api/Gdk_3.0/flags.html?highlight=modifiertype#Gdk.ModifierType
+; with a plus sign (+)
+;
+; To support multiple key combinations, separate each with a comma or whitespace
+; 
+; For example, for CTRL-ALT-Capital C:
+;    quit = CONTROL_MASK+META_MASK+KEY_C
+;
+; Example of multiple combinations (alt-q or escape):
+;    quit = META_MASK+KEY_q
+;           KEY_Escape
+; 
+; To disable a specific key, add a blank entry. If a particular action is 
+; omitted from the config file, the internal default is used.
+;
+; The following actions are supported:
+; 
+; fullscreen - toggle fullscreen mode. DEFAULT: CONTROL_MASK+KEY_f (control-f)
+; pause - stop cycling between slides. DEFAULT: KEY_space (spacebar)
+; forward - go to the next slide. DEFAULT: KEY_Pointer_Right, KEY_d (right arrow, d)
+; back - go to the previous slide. DEFAULT: KEY_Pointer_Left, KEY_a (left arrow, a)
+; quit - exit the program. DEFAULT: KEY_Escape, META_MASK+KEY_q  (escape, control-q)
+; reload - reload/reset each slide. DEFAULT: KEY_F5 (F5)
+;
+; NOTE: You can disable keyboard input altogether using the keyboard_control
+;       parameter in the [main] section.
+;
+[keyboard]
+fullscreen = MOD1_MASK+KEY_f
+pause = KEY_space
+forward = KEY_Right, KEY_d
+back = KEY_Left, KEY_a
+quit = KEY_Escape
+reload = KEY_F5
+
+[google]
+uri = http://www.google.com
+
+[cube]
+type = image
+
+[full_of_fish]
+type = image
+image = full_of_fish.png
+
+[test]
+type = test
+
+[gtk]
+uri = http://www.flickr.com/photos/tags/ocean/show/
+

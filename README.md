@@ -1,2 +1,4 @@
 velouria
 ========
+
+See INSTALL.rst.
