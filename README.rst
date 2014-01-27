@@ -3,7 +3,7 @@ velouria
 
 A configurable, easy-to-use information radiator. 
 
-It uses WebKit2 and GTK+ (3.10) to provide a 
+It uses WebKit2 and GTK+ (3.10) to provide a configurable framework for building secure, lightweight yet robust radiator systems.
 
 Why Velouria?
 =============
