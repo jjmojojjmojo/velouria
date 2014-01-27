@@ -63,7 +63,7 @@ type = image
 
 [full_of_fish]
 type = image
-image = full_of_fish.png
+image = flash.jpg
 
 [test]
 type = test

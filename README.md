@@ -1,4 +1,0 @@
-velouria
-========
-
-See INSTALL.rst.
