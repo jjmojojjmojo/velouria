@@ -36,10 +36,9 @@ If no velouria.conf can be found, load a configuration that shows off/tests the 
 
 Command-Line Options
 --------------------
-The user should be able to pass a few command-line options to configure the applicaiton at runtime. Specifically:
+The user should be able to pass a few command-line options to configure the application at runtime. Specifically:
 
 - specify a velouria.conf file
-- where to write its PID file
 - where to write the log file
 - set the log level
 
@@ -54,14 +53,6 @@ Besides a python egg, the app should be distributable as a system package (targe
 Binary Distribution
 -------------------
 Due to the many dependencies and the current requirement of a bleeding-edge PPA, a binary distribution that bundles all of the libraries would be ideal.
-
-Signal Control
---------------
-Figure out how to receive signals from the operating system (eg SIGHUP) and map to each of the available actions, plus reloading the config file.
-
-Signal Control Script
----------------------
-A command-line convenience application that sends signals to the main app. 
 
 New Slide: Rotate Images Within A Directory
 -------------------------------------------

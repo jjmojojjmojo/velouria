@@ -15,14 +15,24 @@ Two CLI scripts are provided:
 
 VERSION="0.1"
 from app import Velouria
-from gi.repository import Gtk
+from controller import VelouriaServer, VelouriaController
+import signal
+import asyncore
+from gi.repository import Gtk, GLib
 
 def ctl():
     """
     Velouria-control entry point - sends signals to the main application
     to control it
     """
-    
+    VelouriaController()
+
+def poll():
+    """
+    Wiring the poll function from asyncore to the main GTK loop
+    """
+    asyncore.poll(timeout = 0.0)
+    GLib.timeout_add(250, poll)
 
 def main():
     """
@@ -32,4 +42,13 @@ def main():
     """
     app = Velouria()
     app.window.show_all()
+    
+    controller = VelouriaServer(app)
+    
+    # wire up the signal handlers
+    signal.signal(signal.SIGINT, controller.shutdown)
+    signal.signal(signal.SIGINT, app.shutdown)
+    
+    # main loops
+    poll()
     Gtk.main()

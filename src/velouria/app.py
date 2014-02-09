@@ -36,7 +36,7 @@ class Velouria(object):
     def __init__(self, config_file=None):
         self.config_file = config_file
         
-        self.config = VelouriaConfig(paths=self.config_file)
+        self.config = VelouriaConfig(self.config_file)
         
         self.set_style()
         
@@ -95,18 +95,7 @@ class Velouria(object):
                 if mapping['key'] == event.keyval and event.state == mapping['modifiers']:
                     return action
     
-    def on_keypress_dispatch(self, widget, event):
-        """
-        Dispatch keypress events to various methods
-        
-        TODO: use keyboard config to drive
-        """
-        print "KEYPRESS EVENT:"
-        print "%s, %s" % (event.state, event.keyval)
-        
-        print "-----------"
-        action = self._keypress_action(event)
-        
+    def keypress_dispatch(self, action):
         print "ACTION: %s" % (action)
         
         if action == 'fullscreen':
@@ -121,6 +110,20 @@ class Velouria(object):
             self.toggle_pause()
         if action == 'reload':
             self.reload()
+    
+    def on_keypress_dispatch(self, widget, event):
+        """
+        Dispatch keypress events to various methods
+        
+        TODO: use keyboard config to drive
+        """
+        print "KEYPRESS EVENT:"
+        print "%s, %s" % (event.state, event.keyval)
+        
+        print "-----------"
+        action = self._keypress_action(event)
+        
+        self.keypress_dispatch(action)
     
     def on_realize(self, widget):
         if self.config.main.fullscreen_on_start:
@@ -168,6 +171,13 @@ class Velouria(object):
         Exit the application
         """
         Gtk.main_quit()
+        
+    def shutdown(self, signal, frame):
+        """
+        Signal handler for SIGINT
+        """
+        print "Shutting down..."
+        self.quit()
         
     def next(self):
         """

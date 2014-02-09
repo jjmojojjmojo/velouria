@@ -14,6 +14,7 @@ keyboard_control = on
 paused_on_start = on
 fullscreen_on_start = on
 
+
 ; Control the keyboard shortcuts
 ; ------------------------------
 ; Each option of this section corresponds to 

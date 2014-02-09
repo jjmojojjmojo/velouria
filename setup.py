@@ -10,6 +10,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'velouria = velouria:main',
+            'velouria-ctl = velouria:ctl',
         ],
         'velouria.slide': [
             'image = velouria.slide:ScaledImageSlide',

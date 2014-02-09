@@ -250,6 +250,8 @@ class VelouriaConfigMain(VelouriaConfigSection):
     Data structure used to set defaults for, and hold values of,
     the [main] section in velouria.conf
     """
+    _always_list = False
+    
     _defaults = {
         'keyboard_control':'off',
         'slides':'',
@@ -257,7 +259,8 @@ class VelouriaConfigMain(VelouriaConfigSection):
         'height': '400',
         'title': "Velouria v. %s" % VERSION,
         'paused_on_start': 'off',
-        'fullscreen_on_start': 'on'
+        'fullscreen_on_start': 'on',
+        'socket_file': '/tmp/velouria.sock'
     }
     
     _name="main"
@@ -365,20 +368,52 @@ class VelouriaConfigKeyboard(VelouriaConfigSection):
         else:
             return None
 
+def config_paths(paths=None, filename="velouria.conf"):
+    """
+    used to query what the default paths are for the 
+    config file. 
+    
+    Looks in the following directories (in that order), using the first
+    file it finds, if paths is not provided:
+    
+        - the current working directory
+        - $HOME/
+        - /usr/local
+        - /etc
+    """
+    output = []
+    
+    if not paths:
+        paths = [
+            os.getcwd(),
+            os.path.expanduser("~"),
+            '/usr/local',
+            '/etc'
+        ]
+    
+    for prefix in paths:
+        path = os.path.join(prefix, filename)
+        output.append(os.path.abspath(os.path.expanduser(path)))
+        
+    return output
+    
+def config_file(paths):
+    """
+    Loops through a list of paths, and returns the first file it finds,
+    or None if it can't find any
+    
+    TODO: raise an error here if the files cannot be found?
+    """
+    for path in paths:
+        if os.path.exists(path):
+            return [path,]
+
 class VelouriaConfig(object):
     """
     Reads the velouria.conf file, sets defaults, and provides 
     helper methods for constructing dynamic widgets based on
     the config file
     """
-    
-    # the paths to search for velouria.conf
-    # constructed at init if not provided
-    paths = None
-    
-    # the filename to look for configuration info in
-    filename = None
-    
     # internal configparser object
     config = None
     
@@ -394,16 +429,8 @@ class VelouriaConfig(object):
     # global style sheet
     style = None
     
-    def config_file(self):
-        """
-        Loops through self.paths, and returns the first file it finds,
-        or None if it can't find any
-        
-        TODO: raise an error here if the files cannot be found?
-        """
-        for path in self.paths:
-            if os.path.exists(path):
-                return [path,]
+    # config file path
+    config_file_path = None
     
     def set_style(self):
         data =  "* {\n" \
@@ -418,44 +445,28 @@ class VelouriaConfig(object):
         provider.load_from_data(data)
         self.style = provider
     
-    def __init__(self, paths=None, filename='velouria.conf'):
-        """
-        Parse a velouria.conf file.
+    def load(self, config_file_path=None):
         
-        Looks in the following directories (in that order), using the first
-        file it finds, if paths is not provided:
-        
-            - the current working directory
-            - $HOME/
-            - /usr/local
-            - /etc
-            
-        """
-        if not paths:
-            paths = [
-                os.getcwd(),
-                os.path.expanduser("~"),
-                '/usr/local',
-                '/etc'
-            ]
-        
-        print "CONFIG MAIN"
-        print paths
-        
-        self.paths = []
-        
-        for prefix in paths:
-            path = os.path.join(prefix, filename)
-            self.paths.append(os.path.abspath(os.path.expanduser(path)))
+        if not config_file_path:
+            paths = config_paths()
+            config_file_path = config_file(paths)
         
         self.config = ConfigParser()
         
-        print self.config.read(self.config_file())
+        print self.config.read(config_file_path)
         
         self.keyboard = VelouriaConfigKeyboard(self.config)
         
         self.main = VelouriaConfigMain(self.config)
         
         self.slides = VelouriaConfigSlideDeck(self.main)
+        
+        self.config_file_path = config_file_path
+    
+    def __init__(self, config_file_path=None):
+        """
+        Parse a velouria.conf file.
+        """
+        self.load(config_file_path)
         
         self.set_style()
