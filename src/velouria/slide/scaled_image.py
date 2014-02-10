@@ -74,12 +74,12 @@ class ScaledImageSlide(Slide):
         window = widget.get_window()
         
         x, y, width, height = window.get_geometry()
-        
+        self.logger.debug("RELOADING IMAGE %s for slide %s", self.config.image, self.name)
         self._reload_image(width, height)
         
     
     def _reload_image(self, width, height):
-        print "WIDTH: %s HEIGHT: %s" % (width, height)
+        self.logger.debug("WIDTH: %s HEIGHT: %s", width, height)
         buff = self._image.scale_simple(width, height, GdkPixbuf.InterpType.BILINEAR)
         self._image_widget.set_from_pixbuf(buff)
     

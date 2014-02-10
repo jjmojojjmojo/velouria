@@ -15,6 +15,7 @@ import asyncore, asynchat
 import socket
 import os
 import signal
+import logging
 
 class VelouriaDispatcher(object):
     """
@@ -28,6 +29,7 @@ class VelouriaDispatcher(object):
     actions = (
         'fullscreen',
         'forward',
+        'next',
         'back',
         'quit',
         'pause',
@@ -35,26 +37,36 @@ class VelouriaDispatcher(object):
     )
     
     velouria = None
+    logger = None
     
     def __init__(self, velouria):
         """
         velouria is a running Velouria application object
         """
         self.velouria = velouria
+        self.logger = logging.getLogger("velouria")
     
     def __call__(self, command):
         command = command.lower()
         
+        self.logger.debug("Dispatching command: %s", command)
+        
+        output = ""
+        
         if command in self.actions:
             try:
                 self.velouria.keypress_dispatch(command)
-                return "'%s' command executed successfully" % (command)
+                output = "'%s' command executed successfully" % (command)
             except Exception, e:
                 # if anything goes wrong, report back to the client what the 
                 # exception was
-                return "ERROR: %s raised when executing command '%s': %s" % (e.__class__, command, getattr(e, 'msg', ""))
+                output = "ERROR: %s raised when executing command '%s': %s" % (e.__class__, command, e)
         else:
-            return "ERROR: '%s' is not a supported command" % (command)
+            output = "ERROR: '%s' is not a supported command" % (command)
+            
+        self.logger.debug(output)
+        
+        return output
 
 class VelouriaHandler(asynchat.async_chat):
     """
@@ -95,6 +107,9 @@ class VelouriaServer(asyncore.dispatcher):
     velouria = None
     
     def __init__(self, velouria):
+        self.logger = logging.getLogger("velouria")
+        
+        self.logger.info("Initializing command server...")
         asyncore.dispatcher.__init__(self)
         
         self.velouria = velouria
@@ -102,6 +117,7 @@ class VelouriaServer(asyncore.dispatcher):
         socket_file = self.velouria.config.main.socket_file
         
         if os.path.exists(socket_file):
+            self.logger.info("Removing stale socket file %s", socket_file)
             os.unlink(socket_file)
         
         self.create_socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -113,11 +129,12 @@ class VelouriaServer(asyncore.dispatcher):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
-            print 'Incoming command connection'
+            self.logger.debug('Incoming command connection: %s', pair)
             handler = VelouriaHandler(sock, self.velouria)
             
     def shutdown(self, signal, frame):
         """
         Called by signal when someone hits control-c (sends SIGINT)
         """
+        self.logger.info("Shutting down command server...")
         self.close()

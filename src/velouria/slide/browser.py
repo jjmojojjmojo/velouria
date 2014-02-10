@@ -45,8 +45,8 @@ class BrowserSlide(Slide):
         return browser
         
     def reload(self):
-        print "RELOADING"
+        self.logger.debug("RELOADING uri %s for slide %s", self.config.uri, self.name)
         self._show = False
-        self._widget.reload_bypass_cache()
+        self.widget.reload_bypass_cache()
         
     

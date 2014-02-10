@@ -15,6 +15,8 @@ from velouria.config import VelouriaConfigSection
 from velouria.exceptions import ConfigValueError
 from velouria import VERSION
 
+import logging
+
 class VelouriaConfigSlide(VelouriaConfigSection):
     """
     Data structure to set defaults for and hold values of [slide_name] entries
@@ -56,12 +58,16 @@ class Slide(object):
     # reference to our parent Velouria app
     velouria = None
     
+    # logger
+    logger = None
+    
     def __init__(self, name, parent):
         """
         Constructor - pass a unique name and the parent Velouria object
         """
         self.name = name
         self.config = self._config(parent.config.config, name)
+        self.logger = logging.getLogger("velouria")
         
         self.velouria = parent
         self.widget = self.widget()

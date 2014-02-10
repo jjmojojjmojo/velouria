@@ -10,8 +10,101 @@ This module contains classes that parse the velouria.conf file
 from gi.repository import Gdk, Gtk
 from ConfigParser import ConfigParser, NoSectionError, NoOptionError
 from velouria import exceptions, VERSION
-import os
+import os, sys
 import pkg_resources
+
+import logging
+from logging.handlers import SysLogHandler, RotatingFileHandler
+logger = logging.getLogger("velouria")
+
+log_levels = ('debug', 'info', 'error', 'crit', 'warn')
+
+def common_args(parser):
+    """
+    Takes a given argparse parser and adds the common config_file,  
+    log_level, and log_file options
+    """
+    paths = config_paths()
+    filename = config_file(paths)
+    
+    parser.add_argument(
+        "-c",
+        "--config_file",
+        metavar="CONFIG_FILE",
+        default=filename,
+        help="Specify path to a config file. Defaults to %(default)s. \n\n"
+    )
+    
+    parser.add_argument(
+        "-v",
+        "--log_level",
+        choices=('debug', 'info', 'warn', 'error', 'crit'),
+        help="Set the log level for output. Defaults to %s" % (VelouriaConfigMain._defaults['log_level'])
+    )
+    
+    parser.add_argument(
+        "-l",
+        "--log_file",
+        help="Set the path of the log file. Three special values are supported: "
+             "STDOUT/STDERR - write to standard out or error. SYSLOG - write "
+             "to the system log. Defaults to %s" % (VelouriaConfigMain._defaults['log_file'])
+    )
+    
+    parser.epilog = """
+       NOTE: Default config file is dynamically divined. Searched: %s
+    """ % (", ".join(paths))
+    
+
+def setup_logging(log_level, log_file):
+    """
+    Configure logging - uses some special values for 
+    certain situations, like logging to syslog or logging to stdout/stderr
+    """
+    logger = logging.getLogger('velouria')
+    logger.handlers = []
+    if log_file == 'SYSLOG':
+        # default syslog - assumed /dev/log is a domain socket
+        # TODO: use syslog module instead?
+        # TODO: is /dev/log ubiquitous? 
+        handler = SysLogHandler(address='/dev/log')
+        logger.addHandler(handler)
+    elif log_file == 'STDERR':
+        handler = logging.StreamHandler(sys.stderr)
+        logger.addHandler(handler)
+    elif log_file == 'STDOUT':
+        handler = logging.StreamHandler(sys.stdout)
+        logger.addHandler(handler)
+    else:
+        # assume it's a file
+        # add log rotation
+        # TODO: make this configurable
+        rotator = RotatingFileHandler(log_file, maxBytes=5242880, backupCount=5)
+        logger.addHandler(rotator)
+        
+    set_loglevel(log_level)
+    
+    return logger
+
+def set_loglevel(level):
+    """
+    Convert a short name for a log level used in config files, CLI options, 
+    to an integer that the logging module can understand, and set the level.
+    
+    TODO: this could use some refactoring - specifically, enforce D.R.Y.
+    TODO: consider merging with setup_logging()
+    """
+    logger = logging.getLogger('velouria')
+    
+    if level == 'debug':
+        logger.setLevel(logging.DEBUG)
+    elif level == 'info':
+        logger.setLevel(logging.INFO)
+    elif level == 'error':
+        logger.setLevel(logging.ERROR)
+    elif level == 'crit':
+        logger.setLevel(logging.CRITICAL)
+    else:
+        logger.setLevel(logging.WARNING)
 
 def coerse_boolean(value):
     """
@@ -72,9 +165,9 @@ def parse_keymapping(value):
     The keymapping string has the following format:
        SOME_MASK+SOME_OTHER_MASK+KEY_CONSTANT
     
-    NOTE: any constant can be used for the 'key', including mouse clicks.
+    NOTE: any constant can be used for the 'key', including mouse clicks. Untested.
     
-    TODO: handle multiple keys
+    TODO: handle multiple keys (multiple modifiers are implemented with one key)
     """
     output = {
         'modifiers': 0,
@@ -202,7 +295,7 @@ class VelouriaConfigSection(object):
         try:
             self._section = config.items(self._name)
         except (NoSectionError):
-            print "NO SECTION FOUND FOR %s" % (self._name)
+            logging.warn("No section found for %s", self._name)
             self._section = [x for x in self._defaults.iteritems()]
     
     def load_defaults(self):
@@ -260,7 +353,9 @@ class VelouriaConfigMain(VelouriaConfigSection):
         'title': "Velouria v. %s" % VERSION,
         'paused_on_start': 'off',
         'fullscreen_on_start': 'on',
-        'socket_file': '/tmp/velouria.sock'
+        'socket_file': '/tmp/velouria.sock',
+        'log_level': 'info',
+        'log_file': 'velouria.log',
     }
     
     _name="main"
@@ -268,6 +363,8 @@ class VelouriaConfigMain(VelouriaConfigSection):
     def process_option(self, name, value):
         if name in ('keyboard_control', 'paused_on_start', 'fullscreen_on_start'):
             return coerse_boolean(value)
+        elif name == 'slides':
+            return parse_multi(value, always_list=True)
         elif name in ('width', 'height'):
             try:
                 val =  int(value)
@@ -276,6 +373,16 @@ class VelouriaConfigMain(VelouriaConfigSection):
                 return val
             except ValueError:
                 raise exceptions.ConfigValueError, "'%s' is not a valid pixel %s" % (value, name)
+        elif name == 'log_level':
+            if not value in log_levels:
+                raise exceptions.ConfigValueError, "'%s' is not a valid logging level" % (value)
+            else:
+                return value
+        elif name == 'log_file':
+            if not value in ('SYSLOG', 'STDOUT', 'STDERR'):
+                return os.path.abspath(value)
+            else:
+                return value
         else:
             return super(VelouriaConfigMain, self).process_option(name, value)
     
@@ -406,7 +513,7 @@ def config_file(paths):
     """
     for path in paths:
         if os.path.exists(path):
-            return [path,]
+            return path
 
 class VelouriaConfig(object):
     """
@@ -451,9 +558,14 @@ class VelouriaConfig(object):
             paths = config_paths()
             config_file_path = config_file(paths)
         
+        logger.info("Loading config file %s", config_file_path)
+        
         self.config = ConfigParser()
         
-        print self.config.read(config_file_path)
+        parsed = self.config.read([config_file_path,])
+        
+        if not parsed:
+            raise exceptions.ConfigError, "No config file file could be found"
         
         self.keyboard = VelouriaConfigKeyboard(self.config)
         

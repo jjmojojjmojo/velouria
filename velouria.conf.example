@@ -13,7 +13,8 @@ slides =
 keyboard_control = on
 paused_on_start = on
 fullscreen_on_start = on
-
+log_file = SYSLOG
+log_level = DEBUG
 
 ; Control the keyboard shortcuts
 ; ------------------------------

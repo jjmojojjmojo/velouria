@@ -9,8 +9,10 @@ application.
 """
 from gi.repository import Gtk, Gdk, GLib
 
-from config import VelouriaConfig
+from config import VelouriaConfig, setup_logging
 from slide import Slide
+
+import logging
 
 class Velouria(object):
     """
@@ -28,15 +30,20 @@ class Velouria(object):
     
     paused = False
     current = 0
+    logger = None
     
     def set_style(self):
+        self.logger.info("Setting GDK Screen style")
         screen = Gdk.Screen.get_default()
-        Gtk.StyleContext.add_provider_for_screen(screen, self.config.style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        if screen:
+            Gtk.StyleContext.add_provider_for_screen(screen, self.config.style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        else:
+            self.logger.debug("No default screen")
     
-    def __init__(self, config_file=None):
-        self.config_file = config_file
+    def __init__(self, config):
+        self.logger = logging.getLogger("velouria")
         
-        self.config = VelouriaConfig(self.config_file)
+        self.config = config
         
         self.set_style()
         
@@ -45,7 +52,6 @@ class Velouria(object):
         self.window.set_default_size(self.config.main.width, self.config.main.height)
         
         self.window.connect("key_press_event", self.on_keypress_dispatch)
-        
         self.window.connect("realize", self.on_realize)
         self.window.connect("window-state-event", self.on_window_state_change)
         
@@ -75,7 +81,7 @@ class Velouria(object):
         """
         Track the fullscreen/not fullscreen state of the window
         """
-        print event.changed_mask
+        
         if event.changed_mask == Gdk.WindowState.FULLSCREEN:
             if self.fullscreen:
                 self.fullscreen = False
@@ -87,20 +93,22 @@ class Velouria(object):
         Given an event, return the action to take based on the
         self.config.keyboard settings
         """
+        self.logger.debug("KEYVAL: %s STATE: %s", event.keyval, event.state)
+        
         for action, mappings in self.config.keyboard:
-            print action+": ",
-            for mapping in mappings:
-                print mapping['key'],
-                print mapping['modifiers']
+             for mapping in mappings:
+                self.logger.debug("ACTION: %s KEY: %s MODIFIERS: %s", action, mapping['key'], mapping['modifiers'])
                 if mapping['key'] == event.keyval and event.state == mapping['modifiers']:
                     return action
+                    
+        self.logger.debug("NO MAPPING FOUND")
     
     def keypress_dispatch(self, action):
-        print "ACTION: %s" % (action)
+        self.logger.info("ACTION: %s", action)
         
         if action == 'fullscreen':
             self.toggle_fullscreen()
-        if action == 'forward':
+        if action in ('forward', 'next'):
             self.next()
         if action == 'back':
             self.back()
@@ -117,10 +125,8 @@ class Velouria(object):
         
         TODO: use keyboard config to drive
         """
-        print "KEYPRESS EVENT:"
-        print "%s, %s" % (event.state, event.keyval)
+        self.logger.debug("KEYPRESS EVENT: %s, %s", event.state, event.keyval)
         
-        print "-----------"
         action = self._keypress_action(event)
         
         self.keypress_dispatch(action)
@@ -128,8 +134,12 @@ class Velouria(object):
     def on_realize(self, widget):
         if self.config.main.fullscreen_on_start:
             self.toggle_fullscreen()
+        else:
+            self.logger.debug("Full screen on start is turned OFF")
     
     def hide_cursor(self):
+        self.logger.debug("Hiding cursor")
+        
         window = self.window.get_window()
         self._initial_cursor = window.get_cursor()
         
@@ -138,6 +148,8 @@ class Velouria(object):
         window.set_cursor(cursor)
         
     def show_cursor(self):
+        self.logger.debug("Showing cursor")
+        
         window = self.window.get_window()
         window.set_cursor(self._initial_cursor)
         
@@ -146,8 +158,6 @@ class Velouria(object):
         When the user presses CTRL-F (remappable), toggle the window from fullscreen to
         not-fullscreen.
         """
-        print self.fullscreen
-        
         if not self.fullscreen:
             self.hide_cursor()
             self.window.fullscreen()
@@ -170,13 +180,14 @@ class Velouria(object):
         """
         Exit the application
         """
+        self.logger.debug("Quitting main GTK loop...")
         Gtk.main_quit()
         
     def shutdown(self, signal, frame):
         """
         Signal handler for SIGINT
         """
-        print "Shutting down..."
+        self.logger.info("Shutting down...")
         self.quit()
         
     def next(self):
@@ -190,12 +201,8 @@ class Velouria(object):
         if next >= count:
             next = 0
                 
-        
-        print next
         self.notebook.set_current_page(next)
         self.current = next
-        
-        
         
     def back(self):
         """
@@ -208,13 +215,12 @@ class Velouria(object):
         if next < 0:
             next = count-1
         
-        print next
         self.notebook.set_current_page(next)
         self.current = next
         
     def rotate(self):
         """
-        Go next and then 
+        Go next and then re-run rotation
         """
         if self.paused:
             return False
@@ -225,8 +231,9 @@ class Velouria(object):
     def rotation(self):
         """
         Begin rotating the pages in self.notebook (cycle through the slides)
-        """
         
+        Figures out the delay based on the configuration for the current slide.
+        """
         delay = self.slides[self.current].config.delay
         GLib.timeout_add_seconds(delay, self.rotate)
         

@@ -16,14 +16,18 @@ TODO: using server.VelouriaDispatcher as the single source of truth for supporte
 import argparse
 import socket
 import os, sys
-from velouria.config import VelouriaConfig, config_file, config_paths
+import velouria.config
 from server import VelouriaDispatcher, VelouriaHandler
+
+import logging
+logger = logging.getLogger("velouria")
 
 class VelouriaController(object):
     
     config = None
     options = None
     parser = None
+    logger = None
     
     def command(self, command):
         """
@@ -36,13 +40,17 @@ class VelouriaController(object):
         TODO: make the error message when the socket file is not there (e.g.
               the Velouria app is not running) more user friendly.
         """
-        print "INFO: RUNNING COMMAND %s, config file: %s" % (command, self.options.config_file)
+        self.logger.info(
+            "RUNNING COMMAND %s, config file: %s", 
+            command, 
+            self.options.config_file
+        )
         
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.connect(self.config.main.socket_file)
         except socket.error, e:
-            print "ERROR: %s" % (e)
+            logging.error("ERROR: %s", e)
             sys.exit(1)
         
         s.sendall(command+"\n")
@@ -80,19 +88,11 @@ class VelouriaController(object):
             help="A command to send to velouria. Any output will be returned to STDOUT",
         )
         
-        paths = config_paths()
-        filename = config_file(paths)[0]
-        
-        self.parser.epilog = "NOTE: Default config file is dynamically divined. \n\n Searched: %s\n\n" % (", ".join(paths))
-        self.parser.add_argument(
-            "-c",
-            "--config_file",
-            metavar="CONFIG_FILE",
-            default=filename,
-            help="Specify path to a config file. Defaults to %(default)s. \n\n"
-        )
+        velouria.config.common_args(self.parser)
         
         self.options = self.parser.parse_args()
         
-        self.config = VelouriaConfig(self.options.config_file)
+        self.logger = velouria.config.setup_logging(self.options.log_level, self.options.log_file)
+        
+        self.config = velouria.config.VelouriaConfig(self.options.config_file)
         print self.command(self.options.command)
