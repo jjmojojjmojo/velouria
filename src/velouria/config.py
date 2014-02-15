@@ -294,7 +294,9 @@ class VelouriaConfigSection(object):
         """
         try:
             self._section = config.items(self._name)
-        except (NoSectionError):
+        except (NoSectionError, AttributeError):
+            # raises NoSectionError if the section is missing, AttributeError
+            # if config is None or doesn't have an items() method.
             logging.warn("No section found for %s", self._name)
             self._section = [x for x in self._defaults.iteritems()]
     

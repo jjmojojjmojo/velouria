@@ -74,7 +74,7 @@ class TestParseKeyMapping(TestCase):
         
         expected = {
             'key': Gdk.KEY_space,
-            'modifiers': [],
+            'modifiers': 0,
         }
         
         self.assertEqual(expected, parse_keymapping('KEY_space'))
@@ -88,7 +88,7 @@ class TestParseKeyMapping(TestCase):
         
         expected = {
             'key': Gdk.KEY_q,
-            'modifiers': [Gdk.ModifierType.CONTROL_MASK],
+            'modifiers': Gdk.ModifierType.CONTROL_MASK,
         }
         
         self.assertEqual(expected, parse_keymapping('CONTROL_MASK+KEY_q'))
@@ -103,7 +103,7 @@ class TestParseKeyMapping(TestCase):
         
         expected = {
             'key': Gdk.KEY_q,
-            'modifiers': [Gdk.ModifierType.CONTROL_MASK, Gdk.ModifierType.META_MASK],
+            'modifiers': Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.META_MASK,
         }
         
         self.assertEqual(expected, parse_keymapping('CONTROL_MASK+META_MASK+KEY_q'))
@@ -192,26 +192,26 @@ class TestKeyMappingConfig(TestCase):
             'fullscreen': [
                 {
                 'key': Gdk.KEY_f,
-                'modifiers': [Gdk.ModifierType.CONTROL_MASK,]
+                'modifiers': Gdk.ModifierType.CONTROL_MASK
                 }
             ],
             'pause': [
-                {'key': Gdk.KEY_space, 'modifiers': []},
+                {'key': Gdk.KEY_space, 'modifiers': 0},
             ],
             'forward': [
-                {'key': Gdk.KEY_Pointer_Right, 'modifiers': []},
-                {'key': Gdk.KEY_d, 'modifiers': []},
+                {'key': Gdk.KEY_Right, 'modifiers': 0},
+                {'key': Gdk.KEY_d, 'modifiers': 0},
             ],
             'back': [
-                {'key': Gdk.KEY_Pointer_Left, 'modifiers': []},
-                {'key': Gdk.KEY_a, 'modifiers': []},
+                {'key': Gdk.KEY_Left, 'modifiers': 0},
+                {'key': Gdk.KEY_a, 'modifiers': 0},
             ],
             'quit': [
-                {'key': Gdk.KEY_q, 'modifiers': [Gdk.ModifierType.META_MASK,]},
-                {'key': Gdk.KEY_Escape, 'modifiers': []},
+                {'key': Gdk.KEY_q, 'modifiers': Gdk.ModifierType.META_MASK},
+                {'key': Gdk.KEY_Escape, 'modifiers': 0},
             ],
             'reload': [
-                {'key': Gdk.KEY_F5, 'modifiers': []},
+                {'key': Gdk.KEY_F5, 'modifiers': 0},
             ],
         }
         
@@ -223,7 +223,7 @@ class TestKeyMappingConfig(TestCase):
         """
         from velouria.config import VelouriaConfigKeyboard
         
-        keyconfig = VelouriaConfigKeyboard([])
+        keyconfig = VelouriaConfigKeyboard()
         
         expected = self._defaults()
         
@@ -251,11 +251,11 @@ class TestKeyMappingConfig(TestCase):
         # override quit and fullscreen actions
         expected['pause'] = None
         expected['quit'] = [
-            {'key': Gdk.KEY_x, 'modifiers': []},
-            {'key': Gdk.KEY_q, 'modifiers': [Gdk.ModifierType.META_MASK]},
+            {'key': Gdk.KEY_x, 'modifiers': 0},
+            {'key': Gdk.KEY_q, 'modifiers': Gdk.ModifierType.META_MASK},
         ]
         expected['fullscreen'] = [
-            {'key': Gdk.KEY_r, 'modifiers': [Gdk.ModifierType.CONTROL_MASK]},
+            {'key': Gdk.KEY_r, 'modifiers': Gdk.ModifierType.CONTROL_MASK},
         ]
         
         self.assertItemsEqual(expected['quit'], keyconfig.quit)
