@@ -79,7 +79,7 @@ def main():
         logger.info("Starting Velouria v. %s...", VERSION)
     
         app = Velouria(config)
-        app.window.show_all()
+        # app.window.show_all()
         
         controller = VelouriaServer(app)
         

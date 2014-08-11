@@ -89,3 +89,15 @@ A command-line convenience application that sends signals to the main app.
 New Slide: Rotate Images Within A Directory
 -------------------------------------------
 Add a slide where you specify a directory, and it cycles through each image in the directory every time its displayed.
+
+Test Coverage
+-------------
+Shore up the test coverage. Target 80% or more of non-GTK bound code covered.
+
+0.2
+===
+
+Test Environment Too Many Deps
+------------------------------
+Make it possible to run tests without starting the X server and setting DISPLAY.
+

@@ -12,7 +12,7 @@ from gi.repository import Gtk, Gdk, GLib
 from config import VelouriaConfig, setup_logging
 from slide import Slide
 
-import logging
+import logging, datetime
 
 class Velouria(object):
     """
@@ -31,6 +31,9 @@ class Velouria(object):
     paused = False
     current = 0
     logger = None
+    
+    # last time the reload method was called
+    reloaded = None
     
     def set_style(self):
         self.logger.info("Setting GDK Screen style")
@@ -51,7 +54,7 @@ class Velouria(object):
         
         self.window.set_default_size(self.config.main.width, self.config.main.height)
         
-        self.window.connect("key_press_event", self.on_keypress_dispatch)
+        self.window.connect("key-press-event", self.on_keypress_dispatch)
         self.window.connect("realize", self.on_realize)
         self.window.connect("window-state-event", self.on_window_state_change)
         
@@ -77,12 +80,15 @@ class Velouria(object):
         
         self.rotation()
         
+        self.window.show_all()
+        
     def on_window_state_change(self, widget, event):
         """
         Track the fullscreen/not fullscreen state of the window
         """
         
         if event.changed_mask == Gdk.WindowState.FULLSCREEN:
+            self.logger.debug("FULLSCREEN DETECTED")
             if self.fullscreen:
                 self.fullscreen = False
             else:
@@ -94,14 +100,18 @@ class Velouria(object):
         self.config.keyboard settings
         """
         self.logger.debug("KEYVAL: %s STATE: %s", event.keyval, event.state)
+        print "KEYVAL: %s STATE: %s" % (event.keyval, event.state)
+        
         
         for action, mappings in self.config.keyboard:
              for mapping in mappings:
                 self.logger.debug("ACTION: %s KEY: %s MODIFIERS: %s", action, mapping['key'], mapping['modifiers'])
+                print "ACTION: %s KEY: %s MODIFIERS: %s" % (action, mapping['key'], mapping['modifiers'])
                 if mapping['key'] == event.keyval and event.state == mapping['modifiers']:
                     return action
                     
         self.logger.debug("NO MAPPING FOUND")
+        print "NO MAPPING FOUND"
     
     def keypress_dispatch(self, action):
         self.logger.info("ACTION: %s", action)
@@ -158,6 +168,7 @@ class Velouria(object):
         When the user presses CTRL-F (remappable), toggle the window from fullscreen to
         not-fullscreen.
         """
+        print "CALLED, state: %s" % (self.fullscreen)
         if not self.fullscreen:
             self.hide_cursor()
             self.window.fullscreen()
@@ -241,6 +252,7 @@ class Velouria(object):
         """
         Call the reload() method of each slide
         """
+        self.reloaded = datetime.datetime.now()
         for slide in self.slides:
             slide.reload()
             

@@ -263,4 +263,14 @@ class TestKeyMappingConfig(TestCase):
         self.assertIsNone(keyconfig.pause)
         
         
+class TestCommonArgs(TestCase):
+    """
+    The common_args utility function
+    """    
     
+    def test_args(self):
+        """
+        Check the common options
+        """
+        
+        

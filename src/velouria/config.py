@@ -356,7 +356,7 @@ class VelouriaConfigMain(VelouriaConfigSection):
         'paused_on_start': 'off',
         'fullscreen_on_start': 'on',
         'socket_file': '/tmp/velouria.sock',
-        'log_level': 'info',
+        'log_level': 'debug',
         'log_file': 'velouria.log',
     }
     
@@ -554,7 +554,7 @@ class VelouriaConfig(object):
         provider.load_from_data(data)
         self.style = provider
     
-    def load(self, config_file_path=None):
+    def load(self, config_file_path=None, config_object=None):
         
         if not config_file_path:
             paths = config_paths()
@@ -562,12 +562,15 @@ class VelouriaConfig(object):
         
         logger.info("Loading config file %s", config_file_path)
         
-        self.config = ConfigParser()
+        if config_object:
+            self.config = config_object
+        else:
+            self.config = ConfigParser()
         
-        parsed = self.config.read([config_file_path,])
-        
-        if not parsed:
-            raise exceptions.ConfigError, "No config file file could be found"
+            parsed = self.config.read([config_file_path,])
+            
+            if not parsed:
+                raise exceptions.ConfigError, "No config file file could be found"
         
         self.keyboard = VelouriaConfigKeyboard(self.config)
         
@@ -577,10 +580,10 @@ class VelouriaConfig(object):
         
         self.config_file_path = config_file_path
     
-    def __init__(self, config_file_path=None):
+    def __init__(self, config_file_path=None, config_object=None):
         """
         Parse a velouria.conf file.
         """
-        self.load(config_file_path)
+        self.load(config_file_path, config_object)
         
         self.set_style()
