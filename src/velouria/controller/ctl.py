@@ -85,7 +85,7 @@ class VelouriaController(object):
             "command", 
             choices=VelouriaDispatcher.actions,
             metavar="COMMAND",
-            help="A command to send to velouria. Any output will be returned to STDOUT",
+            help="A command to send to velouria. Any output will be returned to STDOUT. Valid options are: {%s}" % (", ".join(VelouriaDispatcher.actions)),
         )
         
         velouria.config.common_args(self.parser)

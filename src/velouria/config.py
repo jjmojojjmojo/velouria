@@ -38,6 +38,7 @@ def common_args(parser):
     parser.add_argument(
         "-v",
         "--log_level",
+        default=VelouriaConfigMain._defaults['log_level'],
         choices=('debug', 'info', 'warn', 'error', 'crit'),
         help="Set the log level for output. Defaults to %s" % (VelouriaConfigMain._defaults['log_level'])
     )
@@ -45,6 +46,7 @@ def common_args(parser):
     parser.add_argument(
         "-l",
         "--log_file",
+        default=VelouriaConfigMain._defaults['log_file'],
         help="Set the path of the log file. Three special values are supported: "
              "STDOUT/STDERR - write to standard out or error. SYSLOG - write "
              "to the system log. Defaults to %s" % (VelouriaConfigMain._defaults['log_file'])
